@@ -25,10 +25,11 @@ class PositionFrame(ctk.CTkFrame):
 
         SliderPanel(self,'Rotation', pos_vars['rotate'], 0 , 360)
         SliderPanel(self,'Zoom',pos_vars['zoom'],0,200)
-        SegmentPanel(self,'Invert', pos_vars['flip'], options= FLIP_OPTIONS)
+        SegmentPanel(self,'Invert', pos_vars['tool'], options = TOOL_OPTIONS)
+        TextPanel(self,'Rectangles',pos_vars['rectangles'])
         RevertButton(self, (pos_vars['rotate'], ROTATE_DEFAULT),
                      (pos_vars['zoom'],ZOOM_DEFAULT),
-                     (pos_vars['flip'],FLIP_OPTIONS[0]))
+                     (pos_vars['tool'],TOOL_OPTIONS[0]))
 
 class ColorFrame(ctk.CTkFrame):
     def __init__(self, parent, color_vars):

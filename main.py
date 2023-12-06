@@ -2,8 +2,15 @@ import customtkinter as ctk
 from image_widgets import *
 from PIL import Image, ImageTk,ImageOps, ImageEnhance, ImageFilter
 from menu import Menu
+import cv2
+from drawer import ShapeDrawer
+from manipulator import ShapeMan
+from scissor import ScissorMan
+from pssettings import *
+
 
 class App(ctk.CTk):
+    
     def __init__(self):
 
         #setup
@@ -30,7 +37,6 @@ class App(ctk.CTk):
         # importButton (frame with button)
         self.image_import = ImageImport(self,self.import_image)
 
-
         # run
         self.mainloop()
 
@@ -38,7 +44,8 @@ class App(ctk.CTk):
         self.pos_vars = {
             'rotate':ctk.DoubleVar(value = ROTATE_DEFAULT),
             'zoom': ctk.DoubleVar(value = ZOOM_DEFAULT),
-            'flip': ctk.StringVar(value = FLIP_OPTIONS[0])
+            'tool': ctk.StringVar(value = TOOL_OPTIONS[0]),
+            'rectangles': ctk.StringVar(value = RECTANGLES_DEFAULT)
         }
 
         self.color_vars = {
@@ -81,17 +88,17 @@ class App(ctk.CTk):
         if self.pos_vars['zoom'].get() != ZOOM_DEFAULT:
             self.image = ImageOps.crop(image = self.image, border = self.pos_vars['zoom'].get())
 
-        #flip
-        if self.pos_vars['flip'].get() != FLIP_OPTIONS[0]:
-            if self.pos_vars['flip'].get() == 'X':
-                print('x')
-                self.image = ImageOps.mirror(self.image)
-            if self.pos_vars['flip'].get() == 'Y':
-                self.image = ImageOps.flip(self.image)
+        # tool
+        if self.pos_vars['tool'].get() != TOOL_OPTIONS[0]:
+            if self.pos_vars['tool'].get() == 'Draw':
+                self.drawShape()
+            if self.pos_vars['tool'].get() == 'Hand':
+                self.moveShape()
+            if self.pos_vars['tool'].get() == 'Scissor':
+                self.deleteShape()
 
-            if self.pos_vars['flip'].get() == 'Both':
-                self.image = ImageOps.mirror(self.image)
-                self.image = ImageOps.flip(self.image)
+        # Rectangles
+        self.pos_vars['rectangles'].set(self.coords)
 
         # brightness & vibrance
         if self.color_vars['brightness'].get() != BRIGHTNESS_DEFAULT:
@@ -132,11 +139,56 @@ class App(ctk.CTk):
 
         self.place_image()
 
+    def drawShape(self):
+        try:
+            self.scissors.stop_scissoring()
+        except:
+            print("no scissor")
+        try:
+            self.manipulator.stop_hand()
+        except:
+            print("no mani")
+
+        self.drawer = ShapeDrawer(self.image_output, self.coords, self.pos_vars)
+        #  rectangles = self.drawer.rectangles
+        #  print(rectangles)
+        
+    def moveShape(self):
+        # Stop drawing
+        try:
+            self.drawer.stop_drawing()
+        except:
+            print("no draw")
+
+        # Know where the user has clicked
+        self.manipulator = ShapeMan(self.image_output, self.coords)
+        # If on rectangle, highlight rectangle
+        #   Able to resize, and delete rectagle  
+
+    def deleteShape(self):
+        # Stop drawing
+        try:
+            self.drawer.stop_drawing()
+        except:
+            print("no draw")
+        try:
+            self.manipulator.stop_hand()
+        except:
+            print("no man")
+
+
+        # Know where the user has clicked
+        self.scissors = ScissorMan(self.image_output, self.coords)
+        # If on rectangle, highlight rectangle
+        #   Able to resize, and delete rectagle  
+
+
     def import_image(self,path):
         self.original = Image.open(path)
         self.image = self.original
         self.image_ratio = self.image.size[0] / self.image.size[1]
-        
+        self.coords = []                                                    # change to make different file on upload 
+
         self.image_tk = ImageTk.PhotoImage(self.image)
         
         #hide imageImport widget
@@ -175,12 +227,28 @@ class App(ctk.CTk):
         self.place_image()
 
     def place_image(self):
+        print(self.coords)
         # place image
         self.image_output.delete('all')
         resized_image = self.image.resize((self.image_width,self.image_height))
         self.image_tk = ImageTk.PhotoImage(resized_image)
         # creates and decides center maybe best for zooming in random places
         self.image_output.create_image(self.canvas_width / 2, self.canvas_height / 2, image = self.image_tk)
+        self.redraw_rectangles()
 
+    def redraw_rectangles(self):
+        self.passover = []
 
+        for rec in self.coords:
+            self.rect = self.image_output.create_rectangle(rec["conates"][0],rec["conates"][1],rec["conates"][2],rec["conates"][3], outline ='red', width=2)
+            self.passover.append({"id": self.rect, "conates":(rec["conates"][0],rec["conates"][1],rec["conates"][2],rec["conates"][3])})
+
+        self.coords.extend(self.passover)
+
+        seen_values = set()
+        for i in range(len(self.coords) - 1, -1, -1):
+            if self.coords[i]["conates"] in seen_values:
+                del self.coords[i]
+            else:
+                seen_values.add(self.coords[i]["conates"])
 App()
