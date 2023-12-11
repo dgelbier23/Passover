@@ -1,0 +1,1 @@
+image2: [{'id': 29, 'conates': (344, 234, 613, 502), 'class': 'Polar Bear'}]
