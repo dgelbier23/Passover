@@ -1,0 +1,7 @@
+path: O:\04_Assembly\_TU-O-41\08_412\01_Info_Internal\39_Interns\Dylan Gelbier\ObjectDetection\model\data # dataset root dir
+train: images/train # train images(relative to 'path')
+val: images/train # val images (relative to 'path')
+
+#classes
+names:
+  0: Steering Tag
